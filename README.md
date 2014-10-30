@@ -4,7 +4,7 @@ Hadoop Course - To Build Recommendation System
 
 ## First Lession
 
-Package To Download
+### Package To Download
 
 Nutch:
 - 下載Nutch 1.9: wget http://ftp.tc.edu.tw/pub/Apache/nutch/1.9/apache-nutch-1.9-bin.tar.gz
@@ -22,8 +22,7 @@ R:
 - install.packages("Amelia")
 
 
-Slides:
+### Slides:
 https://www.slideshare.net/secret/nlatygRCime1Oc
 
-Password:
-twmcourse
+- Password: twmcourse
