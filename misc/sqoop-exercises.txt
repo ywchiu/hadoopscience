@@ -1,0 +1,61 @@
+// load the mysql database with some data. We'll use the "world" database
+cd ~/code-and-data/data/world/
+gunzip worldcitiespop.txt.gz
+// start up the mysql cli (when prompted for password, enter it):
+mysql -uroot -p -e "CREATE DATABASE world"
+// verify the database is there:
+mysql -uroot -p -e "SHOW DATABASES"
+// create the 'cities' table:
+mysql -uroot -p world < cities-create.sql
+// verify the table is there:
+mysql -uroot -p world -e "SHOW TABLES"
+// import the worldcities data into it:
+mysql -uroot -p world -e "LOAD DATA LOCAL INFILE 'worldcitiespop.txt' INTO TABLE cities FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n' IGNORE 1 LINES (country, city_ascii, city, region, population, latitude, longitude)"
+// verify import with (should return 2 rows):
+mysql -uroot -p world -e "SELECT * FROM cities WHERE city LIKE '%Boulder%' AND region='CO'";
+
+
+// whew! mysql data is all set up, now lets import the city data into HDFS:
+sqoop import --connect jdbc:mysql://localhost:3306/world -username root -P --table cities -target-dir /user/cloudera/world-cities -m1
+// verify the import worked:
+hadoop fs -tail /user/cloudera/world-cities/part-m-00000
+// great! we could now run jobs against it (you can even try wordcount if you like).
+// Lets import some data now into Hive:
+sqoop import --connect jdbc:mysql://localhost:3306/world -username root -P --table cities --hive-table cities_hive --create-hive-table --hive-import --hive-home /user/hive/warehouse -m 1
+// let's query some data out of this table in Hive. First, fire up the Hive prompt:
+hive
+// now run the following commands from the hive prompt
+SHOW TABLES; // should return 'cities-hive'
+DESCRIBE EXTENDED cities_hive // note how sqoop made it a hive-managed table
+DESCRIBE cities_hive // note how sqoop brought over the column names & types
+CREATE TABLE boulders_in_colorado (city STRING, state STRING, population BIGINT, latitude DOUBLE, longitude DOUBLE);
+INSERT OVERWRITE TABLE boulders_in_colorado SELECT city,region, population,latitude,longitude FROM cities_hive WHERE city LIKE '%Boulder%' AND region='CO';
+SHOW TABLES; // should now return the table above as well
+SELECT * FROM boulders_in_colorado;
+// drop out of Hive cli:
+exit;
+
+// now, export our new table out of hive back into our MySQL database.
+// first, create the database in MySQL:
+mysql -uroot -p world -e "CREATE TABLE boulder_co (city VARCHAR(30), state CHAR(2), population INT(10) unsigned, latitutde DECIMAL(10,6), longitude DECIMAL(10,6))";
+// verify our table creation:
+mysql -uroot -p world -e "describe boulder_co";
+
+// now export our data from HDFS back into MySQL
+// note that "\001" is octal representation of ^A (what hive uses as default delimiter)
+sqoop export --connect jdbc:mysql://localhost/world --table boulder_co  --export-dir /user/hive/warehouse/boulders_in_colorado --username root --P -m 1 --input-fields-terminated-by '\001'
+// check that the data made it back into mysql:
+mysql -uroot -p world -e "SELECT * FROM boulder_co";
+
+// you're welcome to continue experimenting with sqoop, but when finished make sure to clean up:
+
+// first, remove our test data from HDFS:
+hadoop fs -rm -r world-cities
+// next, remove mysql 'world' database (and all tables inside):
+mysql -uroot -p -e "DROP DATABASE world";
+// remove all hive tables (because they are hive managed, this will remove all underlying data as well):
+hive
+DROP TABLE boulders_in_colorado;
+DROP TABLE cities_hive;
+quit;
+
