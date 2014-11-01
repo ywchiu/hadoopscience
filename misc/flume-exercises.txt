@@ -1,33 +1,23 @@
 // review the configs for 'agent1' & 'agent2', then copy the files
-// to /etc/hadoop/conf. NOTE: Ideally these agents are on two machines
-cd ~/code-and-data/code/flume-basics/
-less flume-agent1.properties
-less flume-agent2.properties
+cd ~/Flume/
+more agent1.properties
+more agent2.properties
 sudo cp *.properties /etc/hadoop/conf
 
 // create the HDFS directory which will store our flume data:
 hadoop fs -mkdir flume
 
-// in one terminal, start the log generator:
-~/code-and-data/code/flume-basics/log-generator.py
-// in a 2nd terminal, watch the output from the logs:
+// start the log generator:
+~/log-generator.py
+
+// watch the output from the logs:
 tail -f /tmp/log-generator.log // every 5 seconds, you should see new entries
 
 // in same terminal as you ran the 'tail', start the downstream agent:
-flume-ng agent --conf /etc/hadoop/conf --conf-file /etc/hadoop/conf/flume-agent2.properties --name agent2
+flume-ng agent --conf /etc/hadoop/conf --conf-file /etc/hadoop/conf/agent2.properties --name agent2
 
-// in a 3rd terminal, start your upstream agent:
-flume-ng agent --conf /etc/hadoop/conf --conf-file /etc/hadoop/conf/flume-agent1.properties --name agent1
+// start your upstream agent:
+flume-ng agent --conf /etc/hadoop/conf --conf-file /etc/hadoop/conf/agent1.properties --name agent1
 
-// open a 4th terminal, and after ~ 30 seconds, try viewing the data in HDFS:
+// try viewing the data in HDFS:
 hadoop fs -ls flume; date;
-
-// you're welcome to continue experimenting with flume, but when finished make sure to clean up:
-
-// first, stop your log generator (CTRL-C) in that first terminal window
-// then, stop your downstream agent (CTRL-C) in the flume2 agent window
-// then, stop your upstream agent (CTRL-C) in the flume1 agent window
-// then, remove your local generated log file:
-sudo rm -rf /tmp/log-generator.log
-// finally, remove your flume output in HDFS:
-hadoop fs -rm -r flume/*
