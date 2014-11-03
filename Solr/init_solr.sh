@@ -1,2 +1,2 @@
-solrctl instancedir --create reviews solr_local
-solrctl collection --create reviews -s 1
+solrctl instancedir --create reviews2 solr_local
+solrctl collection --create reviews2 -s 1

@@ -47,7 +47,7 @@ while True:
     Path = buildPath()
     Ip = str(buildIP())
 
-    line = "HTTP %s %s %s %s"%(Http,Url,Path,Ip)
+    line = "HTTP %s %s %s %s\n"%(Http,Url,Path,Ip)
     print line
     log_File.write(line)
 
