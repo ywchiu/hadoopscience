@@ -23,7 +23,6 @@ SELECT * FROM page_view_internal;
 //View internal data from hdfs
 hadoop fs -ls /user/hive/warehouse/page_view_internal
 hadoop fs -ls /user/hive/warehouse/
-hadoop fs -ls /user/cloudera/input-data/page_view/
 
 DESC EXTENDED page_view_internal;
 // notice tableType (MANAGED_TABLE)

@@ -26,3 +26,18 @@ R (在R 下; Shell 下打入R):
 https://www.slideshare.net/secret/nlatygRCime1Oc
 
 - Password: twmcourse
+
+
+## 11/08教材
+
+新增 MRStreaming, Pig, Hive, Tableau
+可用git pull 或重新下載更新檔案
+
+### 下載Tableau Desktop
+http://www.tableausoftware.com/products/trial
+
+### 安裝連接Driver
+http://www.tableausoftware.com/support/drivers
+
+### Slides:
+https://www.slideshare.net/secret/kpjrreVXkSY1Bl
