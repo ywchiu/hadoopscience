@@ -1,4 +1,5 @@
-
+unzip 2014.zip
+mv 2014 gsod
 hadoop fs -put gsod data/gsod
 
 // Use pig:
