@@ -8,7 +8,7 @@ pig
 allDataWithHeaders = LOAD '/user/cloudera/data/gsod' AS (row:chararray);
 
 dataOnly = FILTER allDataWithHeaders BY SIZE(row) > 108L;
-selectColumns = FOREAC dataOnly GENERATE
+selectColumns = FOREACH dataOnly GENERATE
 	      (int)TRIM(SUBSTRING(row, 0, 6)) AS station,
 	      (int)TRIM(SUBSTRING(row, 7,12)) AS wban,
 	      (int)TRIM(SUBSTRING(row, 14, 22)) AS ymd,
@@ -22,10 +22,10 @@ selectColumns = FOREAC dataOnly GENERATE
 
 
 hasAllData = FILTER selectColumns by temp_avg < 900.0 AND temp_max < 900.0 AND temp_min < 900.0 AND windspeed_avg < 900.0 AND windspeed_max < 900.0 AND visibility < 900.0 AND precipitation < 100.0;
-STORE hasAllData INTO '/user/cloudera/input-data/gsod-filtered';
+STORE hasAllData INTO '/user/cloudera/data/gsod-filtered';
 
-
-STORE sampleOnePercent INTO '/user/cloudera/input-data/gsod-one-pct';
+sampleOnePercent = SAMPLE selectColumns 0.01;
+STORE sampleOnePercent INTO '/user/cloudera/data/gsod-one-pct';
 
 
 allData = LOAD '/user/cloudera/data/gsod-filtered' USING PigStorage('\t') AS (station:int,wban:int,ymd:int,temp_avg:float,temp_max:float,temp_min:float,windspeed_avg:float,windspeed_max:float,visibility:float,precipitation:float);
@@ -34,24 +34,25 @@ maxTemps = LIMIT hottest 50;
 dump maxTemps;
 
 // Load station data
-cut --output-delimiter="" -b1-6,8-12,14-43,47-48,50-51 < data/gsod-stations/ISH-HISTORY.TXT > data/gsod-stations/station-data-only
-hadoop fs -put data/gsod-stations/station-data-only input-data/gsod-stations
+cut --output-delimiter="@" -b1-6,8-12,14-43,47-48,50-51 <  Pig/ISH-HISTORY.TXT
+| tr @ '\t' > Pig/station-data-only
+hadoop fs -put Pig/station-data-only data/gsod-stations
 
 // Pig Script
-stations = LOAD 'input-data/gsod-stations' USING PigStorage('\t') AS (station:int,wban:int,station_name:chararray,country:chararray,state:chararray);
+stations = LOAD 'data/gsod-stations' USING PigStorage('\t') AS (station:int,wban:int,station_name:chararray,country:chararray,state:chararray);
 joined = JOIN maxTemps BY (station,wban), stations BY (station,wban);
 ordered = ORDER joined BY $4 DESC;
 DUMP ordered;
 
 coloradoOnly = FILTER stations by (country MATCHES 'US' AND state MATCHES 'CO');
 joined = JOIN coloradoOnly BY (station,wban), allData BY (station,wban);
-ordered = ORDER joined BY $9 DESC; // note that maxTemp is now 10th field!
+ordered = ORDER joined BY $9 DESC; 
 DUMP ordered;
 
 // remove all 
 quit
-hadoop fs -rm -r input-data/gsod-filtered
-hadoop fs -rm -r input-data/gsod-one-pct
-hadoop fs -rm -r input-data/gsod-stations
+hadoop fs -rm -r data/gsod-filtered
+hadoop fs -rm -r data/gsod-one-pct
+hadoop fs -rm -r data/gsod-stations
 
 
